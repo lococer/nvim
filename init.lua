@@ -1,44 +1,8 @@
 
-function Open_initfile()
-	local init_path="C:\\Users\\luozh\\Appdata\\Local\\nvim\\init.lua"
-	-- vim.cmd("command! e "..init_path)
-	-- vim.api.nvim_exec([[
-	-- 	edit C:\\Users\\luozh\\Appdata\\Local\nvim\\init.lua
-	-- ]],false)
-	-- vim.api.nvim_exec("edit "..init_path,false)
-    vim.cmd("edit "..init_path)
-end
-
-
-vim.o.clipboard = "unnamedplus"
-vim.o.number = true
-vim.o.relativenumber = true
-
-vim.o.tabstop = 4
-vim.o.expandtab = true
-vim.o.shiftwidth = 4
-vim.o.autoindent = true
-vim.o.cursorline = true
-vim.o.splitright = true
-vim.o.splitbelow = true
-
-vim.o.termguicolors = true
-vim.o.signcolumn = "yes"
-
-
-
-vim.g.mapleader = " "
-local keymap = vim.keymap.set
-local opts = {noremap = true, silent = true}
-keymap('n','<f2>',':lua Open_initfile()<CR>',opts)
-keymap("i","jk","<Esc>l",opts)
---keymap("v","jk","<Esc>l",opts)
-
-keymap("v","J",":m '>+1<CR>gv=gv")
-keymap("v","K",":m '<-2<CR>gv=gv")
-keymap("n","<leader>\\","<C-w>v")
-keymap("n","<leader>|","<C-w>s")
-keymap("n","<leader>nh",":nohl<CR>")
+--- the core setup for neovim
+require("setup") -- bacsic setup
+require("keymaps") -- all keymaps
+require("user_function") -- functions defined by myself
 
 --- lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -58,18 +22,21 @@ vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
     {
-        "folke/which-key.nvim"
+        "folke/which-key.nvim",
+        config = function()
+            require("which-key").setup()
+        end
     },
     {
-        "folke/neoconf.nvim", 
-        cmd = "Neoconf" 
+        "folke/neoconf.nvim",
+        cmd = "Neoconf"
     },
     {
         "folke/neodev.nvim"
     },
     {
         "folke/tokyonight.nvim",
-        dependencies = "kyazdani42/nvim-web-devicons" 
+        dependencies = "kyazdani42/nvim-web-devicons"
     },
     {
         "nvim-lualine/lualine.nvim",
@@ -81,12 +48,12 @@ require("lazy").setup({
                 vim.cmd[[colorscheme tokyonight-moon]]
             })
         end
-    },     
+    },
     {
         "nvim-tree/nvim-tree.lua",
         dependencies = {"nvim-tree/nvim-web-devicons"},
         config = function()
-            vim.keymap.set("n","<leader>",":NvimTreeToggle<CR>")
+            vim.keymap.set("n","<leader>e",":NvimTreeToggle<CR>")
             vim.g.loaded_netrw = 1
             vim.g.loaded_netrwPlugin = 1
         	require("nvim-tree").setup({
@@ -103,13 +70,61 @@ require("lazy").setup({
                     dotfiles = true,
                 },
 		})
-        end 
+        end
     },
     {
-        "christoomey/vim-tmux-navigator",
+        -- 括号匹配
         "nvim-treesitter/nvim-treesitter",
-        "p00f/nvim-ts-rainbow",
+        dependencies = "p00f/nvim-ts-rainbow",
+        config = function()
+            require("nvim-treesitter.configs").setup({
+                ensure_installed = {"vim", "bash", "c", "cpp", "javascript", "json", "lua", "python"},
+                highlight = { enable = true},
+                indent = {enable = true},
+
+                rainbow = {
+                    enable = true,
+                    extended_mode = true,
+                    max_file_lines = nil,
+                },
+            })
+        end
     },
+    {
+        "williamboman/mason.nvim",
+        "williamboman/mason-lspconfig.nvim",
+        "neovim/nvim-lspconfig",
+    },
+    {
+        "windwp/nvim-autopairs",
+        event = "InsertEnter",
+        opts = {},
+    },
+    "christoomey/vim-tmux-navigator",
+    {
+        "nvim-telescope/telescope.nvim", tag = "0.1.5",
+        dependencies = { "nvim-lua/plenary.nvim" },
+    },
+})
+
+require("plugins/setup")
+
+require("mason").setup()
+require("mason-lspconfig").setup({
+    ensure_installed = {"lua_ls", },
+})
+
+local on_attach = function(_, _)
+    vim.keymap.set('n','<leader>rn',vim.lsp.buf.rename,{})
+    vim.keymap.set('n','<leader>ca',vim.lsp.buf.code_action,{})
+    vim.keymap.set('n','gd',vim.lsp.buf.definition,{})
+    vim.keymap.set('n','gi',vim.lsp.buf.implementation,{})
+    vim.keymap.set('n','gr',require("telescope.builtin").lsp_references,{})
+    vim.keymap.set('n','K',vim.lsp.buf.hover,{})
+end
+
+require("lspconfig").lua_ls.setup({
+    on_attach = on_attach
 })
 --local api = require "nvim-tree.api"
 --keymap("n","<leader>e",api.tree.toggle())
